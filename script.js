@@ -1,29 +1,46 @@
-// シンプルなSPA風実装
-
-// アプリ状態管理
+// アプリの状態管理
 const state = {
-    screen: 'top',  // top, player, game, result
-    mode: null,     // 6または12
-    players: ['', ''],
-    currentScreenIndex: 0, // プレイヤー入力: 0=player1, 1=player2
-    currentMonth: 0,
-    scores: [], // 各月の {winner: 0 or 1, score: 数値}
-    tempScore: '' // 入力中の得点（文字列）
+    screen: 'top',       // 'top' | 'player1' | 'player2' | 'game' | 'result'
+    mode: null,          // 6 or 12
+    player1: '',
+    player2: '',
+    currentMonth: 1,     // 1 〜 mode
+    scores: [],          // [ {winner: 0 or 1, score: number}, ... ]
+    selectedWinner: null,
+    tempScore: ''
   };
   
-  const monthsAll = ["睦月", "如月", "弥生", "卯月", "皐月", "水無月", "文月", "葉月", "長月", "神無月", "霜月", "師走"];
+  const app = document.getElementById('app');
   
-  // DOM操作ヘルパー
-  const appDiv = document.getElementById('app');
+  // 月名が背景に含まれるのでテキスト表示はしない
+  // 画像は1.png, 2.png ... 12.png
+  function setMonthBackground(month) {
+    // month: 1〜12
+    document.body.style.backgroundImage = `url('assets/images/${month}.png')`;
+  }
+  
+  // 各プレイヤーの合計得点を返す
+  function getTotals() {
+    let total1 = 0, total2 = 0;
+    state.scores.forEach((entry, idx) => {
+      if (entry) {
+        if (entry.winner === 0) total1 += entry.score;
+        else total2 += entry.score;
+      }
+    });
+    return [total1, total2];
+  }
   
   function render() {
-    // 画面ごとにレンダリング
-    switch(state.screen) {
+    switch (state.screen) {
       case 'top':
         renderTopScreen();
         break;
-      case 'player':
-        renderPlayerScreen();
+      case 'player1':
+        renderPlayer1Screen();
+        break;
+      case 'player2':
+        renderPlayer2Screen();
         break;
       case 'game':
         renderGameScreen();
@@ -31,214 +48,240 @@ const state = {
       case 'result':
         renderResultScreen();
         break;
-      default:
-        appDiv.innerHTML = '<div class="screen">Unknown Screen</div>';
     }
   }
   
-  // トップ画面：6ヶ月 or 12ヶ月選択
+  // トップ画面
   function renderTopScreen() {
-    appDiv.innerHTML = `
+    // 背景をbasic.pngに
+    document.body.style.backgroundImage = "url('assets/images/basic.png')";
+    app.innerHTML = `
       <div class="screen">
-        <h1>花札得点記録</h1>
-        <p>モードを選択してください</p>
-        <button class="button" id="mode6">六ヶ月</button>
-        <button class="button" id="mode12">十二ヶ月</button>
+        <h1 class="title">花札得点帳</h1>
+        <button class="button btn-6" id="btn6">六ヶ月</button>
+        <button class="button btn-12" id="btn12">十二ヶ月</button>
       </div>
     `;
-    document.getElementById('mode6').addEventListener('click', () => {
+    document.getElementById('btn6').onclick = () => {
       state.mode = 6;
-      // 使用する月は最初6ヶ月
       state.scores = Array(6).fill(null);
-      state.screen = 'player';
+      state.screen = 'player1';
       render();
-    });
-    document.getElementById('mode12').addEventListener('click', () => {
+    };
+    document.getElementById('btn12').onclick = () => {
       state.mode = 12;
       state.scores = Array(12).fill(null);
-      state.screen = 'player';
+      state.screen = 'player1';
       render();
-    });
+    };
   }
   
-  // プレイヤー名入力画面
-  function renderPlayerScreen() {
-    // プレイヤー1とプレイヤー2を入力
-    appDiv.innerHTML = `
+  // 一人目入力
+  function renderPlayer1Screen() {
+    // 背景はbasic.png
+    document.body.style.backgroundImage = "url('assets/images/basic.png')";
+    app.innerHTML = `
       <div class="screen">
-        <h2>プレイヤー名を入力</h2>
-        <input id="player1" type="text" placeholder="プレイヤー1" value="${state.players[0]}" style="font-size:1.2em; padding:8px; margin:8px; width:80%;">
-        <input id="player2" type="text" placeholder="プレイヤー2" value="${state.players[1]}" style="font-size:1.2em; padding:8px; margin:8px; width:80%;">
-        <br>
-        <button class="button" id="toGame">対局開始</button>
+        <h2 class="subtitle">一人目の名前</h2>
+        <input type="text" class="input-field" id="p1Input" placeholder="一人目の名前を入力" />
+        <br/>
+        <button class="button" id="nextBtn">次へ</button>
+        <button class="button" id="backBtn">戻る</button>
       </div>
     `;
-    document.getElementById('toGame').addEventListener('click', () => {
-      state.players[0] = document.getElementById('player1').value || 'プレイヤー1';
-      state.players[1] = document.getElementById('player2').value || 'プレイヤー2';
-      state.screen = 'game';
-      state.currentMonth = 0;
+    document.getElementById('nextBtn').onclick = () => {
+      const val = document.getElementById('p1Input').value.trim();
+      state.player1 = val || '一人目';
+      state.screen = 'player2';
       render();
-    });
+    };
+    document.getElementById('backBtn').onclick = () => {
+      state.screen = 'top';
+      render();
+    };
   }
   
-  // ゲーム画面：各月の勝者選択と得点入力
+  // 二人目入力
+  function renderPlayer2Screen() {
+    // 背景はbasic.png
+    document.body.style.backgroundImage = "url('assets/images/basic.png')";
+    app.innerHTML = `
+      <div class="screen">
+        <h2 class="subtitle">二人目の名前</h2>
+        <input type="text" class="input-field" id="p2Input" placeholder="二人目の名前を入力" />
+        <br/>
+        <button class="button" id="startBtn">対局開始</button>
+        <button class="button" id="backBtn">戻る</button>
+      </div>
+    `;
+    document.getElementById('startBtn').onclick = () => {
+      const val = document.getElementById('p2Input').value.trim();
+      state.player2 = val || '二人目';
+      state.currentMonth = 1;
+      state.screen = 'game';
+      render();
+    };
+    document.getElementById('backBtn').onclick = () => {
+      state.screen = 'player1';
+      render();
+    };
+  }
+  
+  // ゲーム画面：勝者選択 → テンキー入力
   function renderGameScreen() {
-    if (state.currentMonth >= state.mode) {
+    if (state.currentMonth > state.mode) {
       state.screen = 'result';
       render();
       return;
     }
-    // 背景画像を月ごとに変更（assets/images/1.png など）
-    document.body.style.backgroundImage = `url('assets/images/${state.currentMonth + 1}.png')`;
+    // 月ごとの背景に切り替え
+    setMonthBackground(state.currentMonth);
   
-    // 勝者選択画面と得点入力画面を一画面にまとめる
-    appDiv.innerHTML = `
+    // 前月までの合計得点
+    const [total1, total2] = getTotals();
+  
+    app.innerHTML = `
       <div class="screen">
-        <h2>${monthsAll[state.currentMonth]}</h2>
-        <div id="winnerSelect">
-          <p>勝者を選択してください</p>
-          <button class="button" id="winner0">${state.players[0]}</button>
-          <button class="button" id="winner1">${state.players[1]}</button>
+        <!-- 月名は背景に描かれているので非表示 -->
+        <div class="score-info">
+          <p>${state.player1}：${total1}点</p>
+          <p>${state.player2}：${total2}点</p>
         </div>
-        <div id="scoreInput" style="display:none;">
+        <p>勝者を選択</p>
+        <div>
+          <button class="button winner-btn" id="winner1">${state.player1}</button>
+          <button class="button winner-btn" id="winner2">${state.player2}</button>
+        </div>
+        <div id="scoreSection" style="display: none; margin-top: 10px;">
           <p>得点入力</p>
-          <div class="display" id="scoreDisplay">${state.tempScore || '0'}</div>
+          <div class="display-score" id="scoreDisplay">0</div>
           <div class="keypad" id="keypad"></div>
-          <button class="button" id="deleteBtn">消去</button>
-          <button class="button" id="submitScore">入力完了</button>
+          <button class="button" id="delBtn">消去</button>
+          <button class="button" id="okBtn">入力完了</button>
         </div>
-        <button class="button" id="backBtn">戻る</button>
+        <button class="button" id="backBtn" style="margin-top:10px;">戻る</button>
       </div>
     `;
   
-    // 戻るボタン：前の月またはプレイヤー入力に戻る
-    document.getElementById('backBtn').addEventListener('click', () => {
-      if(state.currentMonth === 0) {
-        state.screen = 'player';
+    // 戻るボタン
+    document.getElementById('backBtn').onclick = () => {
+      if (state.currentMonth === 1) {
+        state.screen = 'player2';
       } else {
-        // 前の月に戻る
+        // 1ヶ月戻る
         state.currentMonth--;
-        state.scores[state.currentMonth] = null;
+        state.scores[state.currentMonth - 1] = null;
       }
       state.tempScore = '';
+      state.selectedWinner = null;
       render();
-    });
+    };
   
     // 勝者選択
-    document.getElementById('winner0').addEventListener('click', () => {
-      selectWinner(0);
-    });
-    document.getElementById('winner1').addEventListener('click', () => {
-      selectWinner(1);
-    });
+    document.getElementById('winner1').onclick = () => {
+      state.selectedWinner = 0;
+      showScoreInput();
+    };
+    document.getElementById('winner2').onclick = () => {
+      state.selectedWinner = 1;
+      showScoreInput();
+    };
   }
   
-  // 勝者選択後、得点入力画面へ切替え
-  function selectWinner(winnerIndex) {
-    state.selectedWinner = winnerIndex;
-    document.getElementById('winnerSelect').style.display = 'none';
-    document.getElementById('scoreInput').style.display = 'block';
+  // 勝者選択後にテンキー表示
+  function showScoreInput() {
+    const scoreSection = document.getElementById('scoreSection');
+    scoreSection.style.display = 'block';
     renderKeypad();
   }
   
-  // テンキー表示
+  // テンキーを漢数字にする
   function renderKeypad() {
-    const keypadDiv = document.getElementById('keypad');
-    keypadDiv.innerHTML = ''; // 初期化
-    // 漢数字対応（内部はアラビア数字扱い）
-    const numbers = [
-      { label: '一', value: '1' },
-      { label: '二', value: '2' },
-      { label: '三', value: '3' },
-      { label: '四', value: '4' },
-      { label: '五', value: '5' },
-      { label: '六', value: '6' },
-      { label: '七', value: '7' },
-      { label: '八', value: '8' },
-      { label: '九', value: '9' },
-      { label: '零', value: '0' }
+    const keypad = document.getElementById('keypad');
+    keypad.innerHTML = '';
+    const kanjiNums = [
+      { label: '一', val: '1' },
+      { label: '二', val: '2' },
+      { label: '三', val: '3' },
+      { label: '四', val: '4' },
+      { label: '五', val: '5' },
+      { label: '六', val: '6' },
+      { label: '七', val: '7' },
+      { label: '八', val: '8' },
+      { label: '九', val: '9' },
+      { label: '零', val: '0' }
     ];
-    numbers.forEach(num => {
+  
+    kanjiNums.forEach(item => {
       const btn = document.createElement('button');
-      btn.className = 'button';
-      btn.textContent = num.label;
-      btn.addEventListener('click', () => {
-        state.tempScore += num.value;
+      btn.className = 'key-btn';
+      btn.textContent = item.label;
+      btn.onclick = () => {
+        state.tempScore += item.val;
         updateScoreDisplay();
-      });
-      keypadDiv.appendChild(btn);
+      };
+      keypad.appendChild(btn);
     });
-  }
   
-  // 得点表示更新
-  function updateScoreDisplay() {
-    document.getElementById('scoreDisplay').textContent = formatToKanji(state.tempScore);
-  }
-  
-  // 送信時処理：得点確定し次月へ
-  document.addEventListener('click', function(e) {
-    if(e.target && e.target.id === 'submitScore') {
-      if(state.tempScore !== '') {
-        // 保存：数値に変換して保存
-        state.scores[state.currentMonth] = {
+    // イベントリスナー
+    document.getElementById('delBtn').onclick = () => {
+      state.tempScore = state.tempScore.slice(0, -1);
+      updateScoreDisplay();
+    };
+    document.getElementById('okBtn').onclick = () => {
+      if (state.tempScore) {
+        state.scores[state.currentMonth - 1] = {
           winner: state.selectedWinner,
           score: parseInt(state.tempScore, 10)
         };
-        // 次の月へ
-        state.currentMonth++;
         state.tempScore = '';
         state.selectedWinner = null;
+        state.currentMonth++;
         render();
       }
-    }
-  });
-  
-  // 消去ボタン処理
-  document.addEventListener('click', function(e) {
-    if(e.target && e.target.id === 'deleteBtn') {
-      state.tempScore = state.tempScore.slice(0, -1);
-      updateScoreDisplay();
-    }
-  });
-  
-  // 結果表示画面
-  function renderResultScreen() {
-    // 全月の合計得点を計算
-    let totals = [0, 0];
-    state.scores.forEach(entry => {
-      if(entry) totals[entry.winner] += entry.score;
-    });
-    // 背景は基本画像
-    document.body.style.backgroundImage = "url('assets/images/basic.png')";
-    appDiv.innerHTML = `
-      <div class="screen">
-        <h2>対戦結果</h2>
-        <p>${state.players[0]}: ${totals[0]}点</p>
-        <p>${state.players[1]}: ${totals[1]}点</p>
-        <button class="button" id="restart">対局終了</button>
-      </div>
-    `;
-    document.getElementById('restart').addEventListener('click', () => {
-      // リセットしてトップ画面へ
-      state.screen = 'top';
-      state.mode = null;
-      state.players = ['', ''];
-      state.currentMonth = 0;
-      state.scores = [];
-      state.tempScore = '';
-      document.body.style.backgroundImage = "url('assets/images/basic.png')";
-      render();
-    });
+    };
   }
   
-  // 漢数字変換（単純実装：各桁を対応する漢数字に置換）
-  function formatToKanji(numStr) {
-    const map = { '0': '零', '1': '一', '2': '二', '3': '三', '4': '四', '5': '五', '6': '六', '7': '七', '8': '八', '9': '九' };
-    // 複雑な桁数表記は今回簡易的に、各桁ごとに漢数字に置換
+  function updateScoreDisplay() {
+    document.getElementById('scoreDisplay').textContent = toKanji(state.tempScore);
+  }
+  
+  // 簡易的な漢数字変換（各桁を置き換えるのみ）
+  function toKanji(numStr) {
+    const map = {
+      '0': '零','1': '一','2': '二','3': '三','4': '四',
+      '5': '五','6': '六','7': '七','8': '八','9': '九'
+    };
     return numStr.split('').map(d => map[d] || d).join('');
   }
   
-  // 初回レンダリング
+  // 結果画面
+  function renderResultScreen() {
+    // 最終合計
+    const [total1, total2] = getTotals();
+    // 背景はbasic.png
+    document.body.style.backgroundImage = "url('assets/images/basic.png')";
+    app.innerHTML = `
+      <div class="screen">
+        <h2 class="subtitle">対戦結果</h2>
+        <p>${state.player1}：${total1}点</p>
+        <p>${state.player2}：${total2}点</p>
+        <button class="button" id="endBtn" style="margin-top:10px;">対局終了</button>
+      </div>
+    `;
+    document.getElementById('endBtn').onclick = () => {
+      // 全部リセットしてトップに戻る
+      state.screen = 'top';
+      state.mode = null;
+      state.player1 = '';
+      state.player2 = '';
+      state.currentMonth = 1;
+      state.scores = [];
+      state.tempScore = '';
+      render();
+    };
+  }
+  
+  // 初期表示
   render();
   
