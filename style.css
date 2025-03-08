@@ -1,66 +1,90 @@
-/* 全画面固定（iPhone12は812px 高さ） */
+/* style.css (一例) */
 html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    overflow: hidden;
+    overflow: hidden; /* iPhone12でスクロールなし */
   }
   
-  /* アプリのルートコンテナ */
   .app-container {
     width: 100%;
     height: 100vh;
-    background: url('assets/images/basic.png') no-repeat center center;
-    background-size: cover;
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
   }
   
-  /* 画面ごとのコンテナ */
   .screen {
-    width: 90%;
-    max-width: 500px;
-    background: rgba(255,255,255,0.8);
+    width: 80%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 10px;
+    text-align: center;
     padding: 20px;
     box-sizing: border-box;
-    text-align: center;
   }
   
-  /* ボタンの基本スタイル */
+  /* タイトル・サブタイトル */
+  .title {
+    font-size: 2em;
+    margin-bottom: 20px;
+  }
+  .subtitle {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+  }
+  
+  /* ボタン */
   .button {
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 1.2em;
+    background-color: #ccc;
     border: none;
     border-radius: 5px;
+    font-size: 1.2em;
+    padding: 10px 20px;
+    margin: 10px 5px;
     cursor: pointer;
   }
   
-  /* テンキーのグリッド */
+  .button:hover {
+    opacity: 0.8;
+  }
+  
+  /* メニュー画面のボタン */
+  .menu-btn {
+    display: block;
+    width: 80%;
+    margin: 10px auto;
+    font-size: 1.5em;
+  }
+  .pink {
+    background-color: #e8a2a8;
+  }
+  .brown {
+    background-color: #b6906f;
+  }
+  
+  /* 入力欄 */
+  .name-input {
+    width: 80%;
+    font-size: 1em;
+    padding: 10px;
+    margin: 10px 0;
+  }
+  
+  /* 勝者選択 */
+  .winner-select {
+    margin: 10px 0;
+  }
+  
+  /* テンキー表示 */
   .keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 20px;
+    gap: 8px;
+    margin: 10px 0;
   }
-  
-  /* 入力値表示 */
   .display {
     font-size: 2em;
-    margin: 20px 0;
-  }
-  
-  /* メディアクエリ（必要に応じて調整） */
-  @media (max-width: 500px) {
-    .button {
-      font-size: 1em;
-      padding: 8px 16px;
-    }
-    .display {
-      font-size: 1.5em;
-    }
+    margin: 10px 0;
   }
   
